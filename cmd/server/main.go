@@ -8,10 +8,10 @@ import (
 	pb "distributed-library-kv/proto"
 	"flag"
 	"fmt"
+	"google.golang.org/grpc"
 	"log"
 	"net"
-
-	"google.golang.org/grpc"
+	"time"
 )
 
 func main() {
@@ -44,7 +44,6 @@ func main() {
 
 	replicator := cluster.NewReplicator(nodes, *nodeID)
 	raftNode := raft.NewNode(*nodeID)
-
 	listener, err := net.Listen("tcp", ":"+*port)
 	if err != nil {
 		log.Fatal(err)
@@ -60,6 +59,24 @@ func main() {
 		*nodeID,
 		*port,
 	)
+	otherNodes := []string{}
+
+	for _, node := range nodes {
+		if node.ID != *nodeID {
+			otherNodes = append(otherNodes, node.Address)
+		}
+	}
+
+	go func() {
+		time.Sleep(3 * time.Second)
+
+		if raftNode.StartElection(otherNodes) {
+			fmt.Printf("Node %s became LEADER\n", *nodeID)
+			raftNode.StartHeartbeat(otherNodes)
+		} else {
+			fmt.Printf("Node %s did not become leader\n", *nodeID)
+		}
+	}()
 
 	if err := grpcServer.Serve(listener); err != nil {
 		log.Fatal(err)

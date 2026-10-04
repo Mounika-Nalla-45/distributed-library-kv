@@ -146,3 +146,14 @@ func (s *Server) RequestVote(
 		VoteGranted: granted,
 	}, nil
 }
+func (s *Server) Heartbeat(
+	ctx context.Context,
+	req *pb.HeartbeatRequest,
+) (*pb.HeartbeatResponse, error) {
+
+	s.raftNode.BecomeFollower(int(req.GetTerm()))
+
+	return &pb.HeartbeatResponse{
+		Success: true,
+	}, nil
+}

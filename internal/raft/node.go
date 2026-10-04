@@ -155,3 +155,55 @@ func (n *Node) StartElection(nodes []string) bool {
 
 	return false
 }
+func (n *Node) IsLeader() bool {
+	n.mu.Lock()
+	defer n.mu.Unlock()
+
+	return n.State == Leader
+}
+func (n *Node) StartHeartbeat(nodes []string) {
+	go func() {
+		ticker := time.NewTicker(1 * time.Second)
+		defer ticker.Stop()
+
+		for range ticker.C {
+			if !n.IsLeader() {
+				continue
+			}
+
+			for _, address := range nodes {
+				go n.sendHeartbeat(address)
+			}
+		}
+	}()
+}
+func (n *Node) sendHeartbeat(address string) {
+	ctx, cancel := context.WithTimeout(
+		context.Background(),
+		2*time.Second,
+	)
+	defer cancel()
+
+	conn, err := grpc.NewClient(
+		address,
+		grpc.WithTransportCredentials(insecure.NewCredentials()),
+	)
+	if err != nil {
+		return
+	}
+	defer conn.Close()
+
+	client := pb.NewKVServiceClient(conn)
+
+	n.mu.Lock()
+	term := n.CurrentTerm
+	n.mu.Unlock()
+
+	_, _ = client.Heartbeat(
+		ctx,
+		&pb.HeartbeatRequest{
+			Term:     int32(term),
+			LeaderId: n.ID,
+		},
+	)
+}
