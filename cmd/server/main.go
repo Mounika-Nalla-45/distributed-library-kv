@@ -68,13 +68,16 @@ func main() {
 	}
 
 	go func() {
-		time.Sleep(3 * time.Second)
+		time.Sleep(2 * time.Second)
 
-		if raftNode.StartElection(otherNodes) {
+		if *nodeID == "node1" {
+			raftNode.BecomeLeader()
+
 			fmt.Printf("Node %s became LEADER\n", *nodeID)
+
 			raftNode.StartHeartbeat(otherNodes)
 		} else {
-			fmt.Printf("Node %s did not become leader\n", *nodeID)
+			fmt.Printf("Node %s is FOLLOWER\n", *nodeID)
 		}
 	}()
 

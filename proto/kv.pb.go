@@ -509,6 +509,194 @@ func (x *HeartbeatResponse) GetSuccess() bool {
 	return false
 }
 
+type LogEntry struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Term          int32                  `protobuf:"varint,1,opt,name=term,proto3" json:"term,omitempty"`
+	Command       string                 `protobuf:"bytes,2,opt,name=command,proto3" json:"command,omitempty"`
+	Key           string                 `protobuf:"bytes,3,opt,name=key,proto3" json:"key,omitempty"`
+	Value         string                 `protobuf:"bytes,4,opt,name=value,proto3" json:"value,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *LogEntry) Reset() {
+	*x = LogEntry{}
+	mi := &file_proto_kv_proto_msgTypes[10]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *LogEntry) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*LogEntry) ProtoMessage() {}
+
+func (x *LogEntry) ProtoReflect() protoreflect.Message {
+	mi := &file_proto_kv_proto_msgTypes[10]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use LogEntry.ProtoReflect.Descriptor instead.
+func (*LogEntry) Descriptor() ([]byte, []int) {
+	return file_proto_kv_proto_rawDescGZIP(), []int{10}
+}
+
+func (x *LogEntry) GetTerm() int32 {
+	if x != nil {
+		return x.Term
+	}
+	return 0
+}
+
+func (x *LogEntry) GetCommand() string {
+	if x != nil {
+		return x.Command
+	}
+	return ""
+}
+
+func (x *LogEntry) GetKey() string {
+	if x != nil {
+		return x.Key
+	}
+	return ""
+}
+
+func (x *LogEntry) GetValue() string {
+	if x != nil {
+		return x.Value
+	}
+	return ""
+}
+
+type AppendEntriesRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Term          int32                  `protobuf:"varint,1,opt,name=term,proto3" json:"term,omitempty"`
+	LeaderId      string                 `protobuf:"bytes,2,opt,name=leader_id,json=leaderId,proto3" json:"leader_id,omitempty"`
+	Entries       []*LogEntry            `protobuf:"bytes,3,rep,name=entries,proto3" json:"entries,omitempty"`
+	LeaderCommit  int32                  `protobuf:"varint,4,opt,name=leader_commit,json=leaderCommit,proto3" json:"leader_commit,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *AppendEntriesRequest) Reset() {
+	*x = AppendEntriesRequest{}
+	mi := &file_proto_kv_proto_msgTypes[11]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *AppendEntriesRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*AppendEntriesRequest) ProtoMessage() {}
+
+func (x *AppendEntriesRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_proto_kv_proto_msgTypes[11]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use AppendEntriesRequest.ProtoReflect.Descriptor instead.
+func (*AppendEntriesRequest) Descriptor() ([]byte, []int) {
+	return file_proto_kv_proto_rawDescGZIP(), []int{11}
+}
+
+func (x *AppendEntriesRequest) GetTerm() int32 {
+	if x != nil {
+		return x.Term
+	}
+	return 0
+}
+
+func (x *AppendEntriesRequest) GetLeaderId() string {
+	if x != nil {
+		return x.LeaderId
+	}
+	return ""
+}
+
+func (x *AppendEntriesRequest) GetEntries() []*LogEntry {
+	if x != nil {
+		return x.Entries
+	}
+	return nil
+}
+
+func (x *AppendEntriesRequest) GetLeaderCommit() int32 {
+	if x != nil {
+		return x.LeaderCommit
+	}
+	return 0
+}
+
+type AppendEntriesResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Term          int32                  `protobuf:"varint,1,opt,name=term,proto3" json:"term,omitempty"`
+	Success       bool                   `protobuf:"varint,2,opt,name=success,proto3" json:"success,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *AppendEntriesResponse) Reset() {
+	*x = AppendEntriesResponse{}
+	mi := &file_proto_kv_proto_msgTypes[12]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *AppendEntriesResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*AppendEntriesResponse) ProtoMessage() {}
+
+func (x *AppendEntriesResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_proto_kv_proto_msgTypes[12]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use AppendEntriesResponse.ProtoReflect.Descriptor instead.
+func (*AppendEntriesResponse) Descriptor() ([]byte, []int) {
+	return file_proto_kv_proto_rawDescGZIP(), []int{12}
+}
+
+func (x *AppendEntriesResponse) GetTerm() int32 {
+	if x != nil {
+		return x.Term
+	}
+	return 0
+}
+
+func (x *AppendEntriesResponse) GetSuccess() bool {
+	if x != nil {
+		return x.Success
+	}
+	return false
+}
+
 var File_proto_kv_proto protoreflect.FileDescriptor
 
 const file_proto_kv_proto_rawDesc = "" +
@@ -541,7 +729,20 @@ const file_proto_kv_proto_rawDesc = "" +
 	"\tleader_id\x18\x02 \x01(\tR\bleaderId\"A\n" +
 	"\x11HeartbeatResponse\x12\x12\n" +
 	"\x04term\x18\x01 \x01(\x05R\x04term\x12\x18\n" +
-	"\asuccess\x18\x02 \x01(\bR\asuccess2\xe3\x02\n" +
+	"\asuccess\x18\x02 \x01(\bR\asuccess\"`\n" +
+	"\bLogEntry\x12\x12\n" +
+	"\x04term\x18\x01 \x01(\x05R\x04term\x12\x18\n" +
+	"\acommand\x18\x02 \x01(\tR\acommand\x12\x10\n" +
+	"\x03key\x18\x03 \x01(\tR\x03key\x12\x14\n" +
+	"\x05value\x18\x04 \x01(\tR\x05value\"\x94\x01\n" +
+	"\x14AppendEntriesRequest\x12\x12\n" +
+	"\x04term\x18\x01 \x01(\x05R\x04term\x12\x1b\n" +
+	"\tleader_id\x18\x02 \x01(\tR\bleaderId\x12&\n" +
+	"\aentries\x18\x03 \x03(\v2\f.kv.LogEntryR\aentries\x12#\n" +
+	"\rleader_commit\x18\x04 \x01(\x05R\fleaderCommit\"E\n" +
+	"\x15AppendEntriesResponse\x12\x12\n" +
+	"\x04term\x18\x01 \x01(\x05R\x04term\x12\x18\n" +
+	"\asuccess\x18\x02 \x01(\bR\asuccess2\xa9\x03\n" +
 	"\tKVService\x12&\n" +
 	"\x03Put\x12\x0e.kv.PutRequest\x1a\x0f.kv.PutResponse\x12&\n" +
 	"\x03Get\x12\x0e.kv.GetRequest\x1a\x0f.kv.GetResponse\x12/\n" +
@@ -549,7 +750,8 @@ const file_proto_kv_proto_rawDesc = "" +
 	"\fReplicatePut\x12\x0e.kv.PutRequest\x1a\x0f.kv.PutResponse\x128\n" +
 	"\x0fReplicateDelete\x12\x11.kv.DeleteRequest\x1a\x12.kv.DeleteResponse\x120\n" +
 	"\vRequestVote\x12\x0f.kv.VoteRequest\x1a\x10.kv.VoteResponse\x128\n" +
-	"\tHeartbeat\x12\x14.kv.HeartbeatRequest\x1a\x15.kv.HeartbeatResponseB\x1eZ\x1cdistributed-library-kv/protob\x06proto3"
+	"\tHeartbeat\x12\x14.kv.HeartbeatRequest\x1a\x15.kv.HeartbeatResponse\x12D\n" +
+	"\rAppendEntries\x12\x18.kv.AppendEntriesRequest\x1a\x19.kv.AppendEntriesResponseB\x1eZ\x1cdistributed-library-kv/protob\x06proto3"
 
 var (
 	file_proto_kv_proto_rawDescOnce sync.Once
@@ -563,39 +765,45 @@ func file_proto_kv_proto_rawDescGZIP() []byte {
 	return file_proto_kv_proto_rawDescData
 }
 
-var file_proto_kv_proto_msgTypes = make([]protoimpl.MessageInfo, 10)
+var file_proto_kv_proto_msgTypes = make([]protoimpl.MessageInfo, 13)
 var file_proto_kv_proto_goTypes = []any{
-	(*PutRequest)(nil),        // 0: kv.PutRequest
-	(*PutResponse)(nil),       // 1: kv.PutResponse
-	(*GetRequest)(nil),        // 2: kv.GetRequest
-	(*GetResponse)(nil),       // 3: kv.GetResponse
-	(*DeleteRequest)(nil),     // 4: kv.DeleteRequest
-	(*DeleteResponse)(nil),    // 5: kv.DeleteResponse
-	(*VoteRequest)(nil),       // 6: kv.VoteRequest
-	(*VoteResponse)(nil),      // 7: kv.VoteResponse
-	(*HeartbeatRequest)(nil),  // 8: kv.HeartbeatRequest
-	(*HeartbeatResponse)(nil), // 9: kv.HeartbeatResponse
+	(*PutRequest)(nil),            // 0: kv.PutRequest
+	(*PutResponse)(nil),           // 1: kv.PutResponse
+	(*GetRequest)(nil),            // 2: kv.GetRequest
+	(*GetResponse)(nil),           // 3: kv.GetResponse
+	(*DeleteRequest)(nil),         // 4: kv.DeleteRequest
+	(*DeleteResponse)(nil),        // 5: kv.DeleteResponse
+	(*VoteRequest)(nil),           // 6: kv.VoteRequest
+	(*VoteResponse)(nil),          // 7: kv.VoteResponse
+	(*HeartbeatRequest)(nil),      // 8: kv.HeartbeatRequest
+	(*HeartbeatResponse)(nil),     // 9: kv.HeartbeatResponse
+	(*LogEntry)(nil),              // 10: kv.LogEntry
+	(*AppendEntriesRequest)(nil),  // 11: kv.AppendEntriesRequest
+	(*AppendEntriesResponse)(nil), // 12: kv.AppendEntriesResponse
 }
 var file_proto_kv_proto_depIdxs = []int32{
-	0, // 0: kv.KVService.Put:input_type -> kv.PutRequest
-	2, // 1: kv.KVService.Get:input_type -> kv.GetRequest
-	4, // 2: kv.KVService.Delete:input_type -> kv.DeleteRequest
-	0, // 3: kv.KVService.ReplicatePut:input_type -> kv.PutRequest
-	4, // 4: kv.KVService.ReplicateDelete:input_type -> kv.DeleteRequest
-	6, // 5: kv.KVService.RequestVote:input_type -> kv.VoteRequest
-	8, // 6: kv.KVService.Heartbeat:input_type -> kv.HeartbeatRequest
-	1, // 7: kv.KVService.Put:output_type -> kv.PutResponse
-	3, // 8: kv.KVService.Get:output_type -> kv.GetResponse
-	5, // 9: kv.KVService.Delete:output_type -> kv.DeleteResponse
-	1, // 10: kv.KVService.ReplicatePut:output_type -> kv.PutResponse
-	5, // 11: kv.KVService.ReplicateDelete:output_type -> kv.DeleteResponse
-	7, // 12: kv.KVService.RequestVote:output_type -> kv.VoteResponse
-	9, // 13: kv.KVService.Heartbeat:output_type -> kv.HeartbeatResponse
-	7, // [7:14] is the sub-list for method output_type
-	0, // [0:7] is the sub-list for method input_type
-	0, // [0:0] is the sub-list for extension type_name
-	0, // [0:0] is the sub-list for extension extendee
-	0, // [0:0] is the sub-list for field type_name
+	10, // 0: kv.AppendEntriesRequest.entries:type_name -> kv.LogEntry
+	0,  // 1: kv.KVService.Put:input_type -> kv.PutRequest
+	2,  // 2: kv.KVService.Get:input_type -> kv.GetRequest
+	4,  // 3: kv.KVService.Delete:input_type -> kv.DeleteRequest
+	0,  // 4: kv.KVService.ReplicatePut:input_type -> kv.PutRequest
+	4,  // 5: kv.KVService.ReplicateDelete:input_type -> kv.DeleteRequest
+	6,  // 6: kv.KVService.RequestVote:input_type -> kv.VoteRequest
+	8,  // 7: kv.KVService.Heartbeat:input_type -> kv.HeartbeatRequest
+	11, // 8: kv.KVService.AppendEntries:input_type -> kv.AppendEntriesRequest
+	1,  // 9: kv.KVService.Put:output_type -> kv.PutResponse
+	3,  // 10: kv.KVService.Get:output_type -> kv.GetResponse
+	5,  // 11: kv.KVService.Delete:output_type -> kv.DeleteResponse
+	1,  // 12: kv.KVService.ReplicatePut:output_type -> kv.PutResponse
+	5,  // 13: kv.KVService.ReplicateDelete:output_type -> kv.DeleteResponse
+	7,  // 14: kv.KVService.RequestVote:output_type -> kv.VoteResponse
+	9,  // 15: kv.KVService.Heartbeat:output_type -> kv.HeartbeatResponse
+	12, // 16: kv.KVService.AppendEntries:output_type -> kv.AppendEntriesResponse
+	9,  // [9:17] is the sub-list for method output_type
+	1,  // [1:9] is the sub-list for method input_type
+	1,  // [1:1] is the sub-list for extension type_name
+	1,  // [1:1] is the sub-list for extension extendee
+	0,  // [0:1] is the sub-list for field type_name
 }
 
 func init() { file_proto_kv_proto_init() }
@@ -609,7 +817,7 @@ func file_proto_kv_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_proto_kv_proto_rawDesc), len(file_proto_kv_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   10,
+			NumMessages:   13,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

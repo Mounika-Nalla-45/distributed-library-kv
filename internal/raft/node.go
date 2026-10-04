@@ -30,6 +30,9 @@ type Node struct {
 	VotedFor    string
 
 	LastHeartbeat time.Time
+
+	Log         []pb.LogEntry
+	CommitIndex int
 }
 
 func NewNode(id string) *Node {
@@ -39,6 +42,8 @@ func NewNode(id string) *Node {
 		CurrentTerm:   0,
 		VotedFor:      "",
 		LastHeartbeat: time.Now(),
+		Log:           make([]pb.LogEntry, 0),
+		CommitIndex:   0,
 	}
 }
 
@@ -143,15 +148,40 @@ func (n *Node) StartElection(nodes []string) bool {
 			continue
 		}
 
+		// If another node has a newer term,
+		// step down immediately.
+		if int(response.GetTerm()) > term {
+			n.BecomeFollower(int(response.GetTerm()))
+			return false
+		}
+
 		if response.GetVoteGranted() {
 			votes++
 		}
 	}
 
+	// Become leader only after receiving a majority.
 	if votes >= 2 {
-		n.BecomeLeader()
-		return true
+		n.mu.Lock()
+
+		// Make sure we are still a candidate
+		// in the same election term.
+		if n.State == Candidate && n.CurrentTerm == term {
+			n.State = Leader
+			n.LastHeartbeat = time.Now()
+			n.mu.Unlock()
+
+			return true
+		}
+
+		n.mu.Unlock()
 	}
+
+	n.mu.Lock()
+	if n.State == Candidate {
+		n.State = Follower
+	}
+	n.mu.Unlock()
 
 	return false
 }
@@ -206,4 +236,161 @@ func (n *Node) sendHeartbeat(address string) {
 			LeaderId: n.ID,
 		},
 	)
+}
+func (n *Node) HandleAppendEntries(
+	term int,
+	leaderID string,
+	entries []*pb.LogEntry,
+	leaderCommit int,
+) (int, bool) {
+
+	n.mu.Lock()
+	defer n.mu.Unlock()
+
+	// Reject old term.
+	if term < n.CurrentTerm {
+		return n.CurrentTerm, false
+	}
+
+	// Update term if leader has newer term.
+	if term > n.CurrentTerm {
+		n.CurrentTerm = term
+		n.VotedFor = ""
+	}
+
+	// Become follower when receiving leader message.
+	n.State = Follower
+	n.LastHeartbeat = time.Now()
+
+	// Add entries to local log.
+	for _, entry := range entries {
+		if entry != nil {
+			n.Log = append(n.Log, *entry)
+		}
+	}
+
+	// Update commit index.
+	if leaderCommit > n.CommitIndex {
+		n.CommitIndex = leaderCommit
+
+		if n.CommitIndex > len(n.Log) {
+			n.CommitIndex = len(n.Log)
+		}
+	}
+
+	return n.CurrentTerm, true
+}
+func (n *Node) GetLog() []pb.LogEntry {
+	n.mu.Lock()
+	defer n.mu.Unlock()
+
+	result := make([]pb.LogEntry, len(n.Log))
+	copy(result, n.Log)
+
+	return result
+}
+func (n *Node) ReplicateEntry(
+	nodes []string,
+	command string,
+	key string,
+	value string,
+) bool {
+
+	n.mu.Lock()
+
+	if n.State != Leader {
+		n.mu.Unlock()
+		return false
+	}
+
+	entry := &pb.LogEntry{
+		Term:    int32(n.CurrentTerm),
+		Command: command,
+		Key:     key,
+		Value:   value,
+	}
+
+	n.Log = append(n.Log, *entry)
+
+	term := n.CurrentTerm
+	n.mu.Unlock()
+
+	// Leader counts as one vote.
+	acknowledgements := 1
+
+	resultCh := make(chan bool, len(nodes))
+
+	for _, address := range nodes {
+		if address == "" {
+			continue
+		}
+
+		go func(address string) {
+
+			ctx, cancel := context.WithTimeout(
+				context.Background(),
+				2*time.Second,
+			)
+			defer cancel()
+
+			conn, err := grpc.NewClient(
+				address,
+				grpc.WithTransportCredentials(
+					insecure.NewCredentials(),
+				),
+			)
+
+			if err != nil {
+				resultCh <- false
+				return
+			}
+			defer conn.Close()
+
+			client := pb.NewKVServiceClient(conn)
+
+			response, err := client.AppendEntries(
+				ctx,
+				&pb.AppendEntriesRequest{
+					Term:         int32(term),
+					LeaderId:     n.ID,
+					Entries:      []*pb.LogEntry{entry},
+					LeaderCommit: int32(n.CommitIndex),
+				},
+			)
+
+			if err != nil {
+				resultCh <- false
+				return
+			}
+
+			resultCh <- response.GetSuccess()
+
+		}(address)
+	}
+
+	// Wait for follower responses.
+	for range nodes {
+		select {
+		case success := <-resultCh:
+			if success {
+				acknowledgements++
+			}
+
+			// Majority achieved.
+			if acknowledgements >= 2 {
+				n.mu.Lock()
+
+				n.CommitIndex = len(n.Log)
+
+				n.mu.Unlock()
+
+				return true
+			}
+
+		case <-time.After(3 * time.Second):
+			return false
+		}
+	}
+
+	return false
 }

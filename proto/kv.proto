@@ -15,6 +15,7 @@ service KVService {
     
     rpc RequestVote(VoteRequest) returns (VoteResponse);
     rpc Heartbeat(HeartbeatRequest) returns (HeartbeatResponse);
+    rpc AppendEntries(AppendEntriesRequest) returns (AppendEntriesResponse);
 }
 
 message PutRequest {
@@ -58,6 +59,24 @@ message HeartbeatRequest {
 }
 
 message HeartbeatResponse {
+    int32 term = 1;
+    bool success = 2;
+}
+message LogEntry {
+    int32 term = 1;
+    string command = 2;
+    string key = 3;
+    string value = 4;
+}
+
+message AppendEntriesRequest {
+    int32 term = 1;
+    string leader_id = 2;
+    repeated LogEntry entries = 3;
+    int32 leader_commit = 4;
+}
+
+message AppendEntriesResponse {
     int32 term = 1;
     bool success = 2;
 }

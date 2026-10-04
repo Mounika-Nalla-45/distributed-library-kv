@@ -26,6 +26,7 @@ const (
 	KVService_ReplicateDelete_FullMethodName = "/kv.KVService/ReplicateDelete"
 	KVService_RequestVote_FullMethodName     = "/kv.KVService/RequestVote"
 	KVService_Heartbeat_FullMethodName       = "/kv.KVService/Heartbeat"
+	KVService_AppendEntries_FullMethodName   = "/kv.KVService/AppendEntries"
 )
 
 // KVServiceClient is the client API for KVService service.
@@ -40,6 +41,7 @@ type KVServiceClient interface {
 	ReplicateDelete(ctx context.Context, in *DeleteRequest, opts ...grpc.CallOption) (*DeleteResponse, error)
 	RequestVote(ctx context.Context, in *VoteRequest, opts ...grpc.CallOption) (*VoteResponse, error)
 	Heartbeat(ctx context.Context, in *HeartbeatRequest, opts ...grpc.CallOption) (*HeartbeatResponse, error)
+	AppendEntries(ctx context.Context, in *AppendEntriesRequest, opts ...grpc.CallOption) (*AppendEntriesResponse, error)
 }
 
 type kVServiceClient struct {
@@ -120,6 +122,16 @@ func (c *kVServiceClient) Heartbeat(ctx context.Context, in *HeartbeatRequest, o
 	return out, nil
 }
 
+func (c *kVServiceClient) AppendEntries(ctx context.Context, in *AppendEntriesRequest, opts ...grpc.CallOption) (*AppendEntriesResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(AppendEntriesResponse)
+	err := c.cc.Invoke(ctx, KVService_AppendEntries_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // KVServiceServer is the server API for KVService service.
 // All implementations must embed UnimplementedKVServiceServer
 // for forward compatibility.
@@ -132,6 +144,7 @@ type KVServiceServer interface {
 	ReplicateDelete(context.Context, *DeleteRequest) (*DeleteResponse, error)
 	RequestVote(context.Context, *VoteRequest) (*VoteResponse, error)
 	Heartbeat(context.Context, *HeartbeatRequest) (*HeartbeatResponse, error)
+	AppendEntries(context.Context, *AppendEntriesRequest) (*AppendEntriesResponse, error)
 	mustEmbedUnimplementedKVServiceServer()
 }
 
@@ -162,6 +175,9 @@ func (UnimplementedKVServiceServer) RequestVote(context.Context, *VoteRequest) (
 }
 func (UnimplementedKVServiceServer) Heartbeat(context.Context, *HeartbeatRequest) (*HeartbeatResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method Heartbeat not implemented")
+}
+func (UnimplementedKVServiceServer) AppendEntries(context.Context, *AppendEntriesRequest) (*AppendEntriesResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method AppendEntries not implemented")
 }
 func (UnimplementedKVServiceServer) mustEmbedUnimplementedKVServiceServer() {}
 func (UnimplementedKVServiceServer) testEmbeddedByValue()                   {}
@@ -310,6 +326,24 @@ func _KVService_Heartbeat_Handler(srv interface{}, ctx context.Context, dec func
 	return interceptor(ctx, in, info, handler)
 }
 
+func _KVService_AppendEntries_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(AppendEntriesRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(KVServiceServer).AppendEntries(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: KVService_AppendEntries_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(KVServiceServer).AppendEntries(ctx, req.(*AppendEntriesRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // KVService_ServiceDesc is the grpc.ServiceDesc for KVService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -344,6 +378,10 @@ var KVService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "Heartbeat",
 			Handler:    _KVService_Heartbeat_Handler,
+		},
+		{
+			MethodName: "AppendEntries",
+			Handler:    _KVService_AppendEntries_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

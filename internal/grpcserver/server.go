@@ -2,11 +2,11 @@ package grpcserver
 
 import (
 	"context"
-
 	"distributed-library-kv/internal/cluster"
 	"distributed-library-kv/internal/raft"
 	"distributed-library-kv/internal/storage"
 	pb "distributed-library-kv/proto"
+	"fmt"
 )
 
 type Server struct {
@@ -39,6 +39,24 @@ func (s *Server) Put(
 		return &pb.PutResponse{
 			Success: false,
 		}, err
+	}
+	if s.raftNode != nil && s.raftNode.IsLeader() {
+
+		committed := s.raftNode.ReplicateEntry(
+			[]string{
+				"localhost:50052",
+				"localhost:50053",
+			},
+			"PUT",
+			req.GetKey(),
+			req.GetValue(),
+		)
+
+		if !committed {
+			return &pb.PutResponse{
+				Success: false,
+			}, fmt.Errorf("failed to reach Raft majority")
+		}
 	}
 
 	if s.replicator != nil {
@@ -155,5 +173,59 @@ func (s *Server) Heartbeat(
 
 	return &pb.HeartbeatResponse{
 		Success: true,
+	}, nil
+}
+func (s *Server) AppendEntries(
+	ctx context.Context,
+	req *pb.AppendEntriesRequest,
+) (*pb.AppendEntriesResponse, error) {
+
+	if s.raftNode == nil {
+		return &pb.AppendEntriesResponse{
+			Success: false,
+		}, nil
+	}
+
+	term, success := s.raftNode.HandleAppendEntries(
+		int(req.GetTerm()),
+		req.GetLeaderId(),
+		req.GetEntries(),
+		int(req.GetLeaderCommit()),
+	)
+
+	// Apply replicated commands to the local KV store.
+	if success {
+		for _, entry := range req.GetEntries() {
+			if entry == nil {
+				continue
+			}
+
+			switch entry.GetCommand() {
+			case "PUT":
+				if err := s.store.Put(
+					entry.GetKey(),
+					entry.GetValue(),
+				); err != nil {
+					return &pb.AppendEntriesResponse{
+						Term:    int32(term),
+						Success: false,
+					}, err
+				}
+
+			case "DELETE":
+				if err := s.store.Delete(entry.GetKey()); err != nil &&
+					err != storage.ErrKeyNotFound {
+					return &pb.AppendEntriesResponse{
+						Term:    int32(term),
+						Success: false,
+					}, err
+				}
+			}
+		}
+	}
+
+	return &pb.AppendEntriesResponse{
+		Term:    int32(term),
+		Success: success,
 	}, nil
 }

@@ -15,3 +15,10 @@ PUT|DELETE_TEST|Delete Replication Test
 PUT|DELETE_TEST|Computer Networks
 PUT|DELETE_TEST|Delete Replication Test
 DELETE|DELETE_TEST
+PUT|RAFT_TEST|Distributed Systems
+PUT|RAFT_TEST|Distributed Systems
+PUT|RAFT_TEST|Distributed Systems
+PUT|FINAL_TEST|Distributed Library
+PUT|FINAL_TEST|Distributed Library
+PUT|FINAL_TEST|Distributed Library
+DELETE|FINAL_TEST
