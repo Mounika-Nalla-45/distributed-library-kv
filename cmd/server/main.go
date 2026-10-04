@@ -2,35 +2,41 @@ package main
 
 import (
 	"fmt"
+	"log"
+	"net"
 
-	"distributed-library-kv/internal/kv"
-	"distributed-library-kv/internal/library"
+	"distributed-library-kv/internal/grpcserver"
+	"distributed-library-kv/internal/storage"
+	pb "distributed-library-kv/proto"
+
+	"google.golang.org/grpc"
 )
 
 func main() {
+	// Create LSM storage.
+	store, err := storage.NewLSMTree("./data", 100)
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer store.Close()
 
-	store := kv.NewStore()
-
-	lib := library.NewLibrary(store)
-
-	// Add books
-	lib.AddBook("B101", "Computer Networks")
-	lib.AddBook("B102", "Operating Systems")
-	lib.AddBook("B103", "Data Structures")
-
-	// Get a book
-	book, exists := lib.GetBook("B101")
-
-	if exists {
-		fmt.Println("Book:", book)
+	// Create TCP listener.
+	listener, err := net.Listen("tcp", ":50051")
+	if err != nil {
+		log.Fatal(err)
 	}
 
-	// Delete a book
-	lib.DeleteBook("B103")
+	// Create gRPC server.
+	grpcServer := grpc.NewServer()
 
-	_, exists = lib.GetBook("B103")
+	// Register our KV service.
+	service := grpcserver.NewServer(store)
+	pb.RegisterKVServiceServer(grpcServer, service)
 
-	if !exists {
-		fmt.Println("B103 deleted successfully")
+	fmt.Println("gRPC server running on port 50051")
+
+	// Start server.
+	if err := grpcServer.Serve(listener); err != nil {
+		log.Fatal(err)
 	}
 }
