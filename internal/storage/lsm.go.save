@@ -1,0 +1,193 @@
+package storage
+
+import (
+	"errors"
+	"fmt"
+	"os"
+	"path/filepath"
+	"strconv"
+	"strings"
+	"sync"
+)
+
+var ErrKeyNotFound = errors.New("key not found")
+
+type LSMTree struct {
+	mu sync.RWMutex
+
+	memTable *MemTable
+lsm := &LSMTree{
+	memTable:   NewMemTable(),
+	wal:        wal,
+	dataDir:    dataDir,
+	maxEntries: maxEntries,
+}
+
+err = lsm.recover()
+if err != nil {
+	wal.Close()
+	return nil, err
+}
+
+return lsm, nil	wal      *WAL
+
+	dataDir string
+
+	maxEntries int
+	sstableID  int
+}
+
+func NewLSMTree(dataDir string, maxEntries int) (*LSMTree, error) {
+	if maxEntries <= 0 {
+		maxEntries = 100
+	}
+
+	err := os.MkdirAll(dataDir, 0755)
+	if err != nil {
+		return nil, err
+	}
+
+	walPath := filepath.Join(dataDir, "wal.log")
+
+	wal, err := OpenWAL(walPath)
+	if err != nil {
+		return nil, err
+	}
+
+	return &LSMTree{
+		memTable:   NewMemTable(),
+		wal:        wal,
+		dataDir:    dataDir,
+		maxEntries: maxEntries,
+	}, nil
+}
+
+func (l *LSMTree) Put(key string, value string) error {
+	l.mu.Lock()
+	defer l.mu.Unlock()
+
+	operation := fmt.Sprintf("PUT|%s|%s", key, value)
+
+	err := l.wal.Write(operation)
+	if err != nil {
+		return err
+	}
+
+	l.memTable.Put(key, value)
+
+	if l.memTableSize() >= l.maxEntries {
+		return l.flush()
+	}
+
+	return nil
+}
+
+func (l *LSMTree) Get(key string) (string, error) {
+	l.mu.RLock()
+	defer l.mu.RUnlock()
+
+	// First check the MemTable.
+	value, ok := l.memTable.Get(key)
+	if ok {
+		return value, nil
+	}
+
+	// If not found in memory, check SSTables on disk.
+	value, err := l.loadSSTable(key)
+	if err != nil {
+		return "", err
+	}
+
+	return value, nil
+}
+func (l *LSMTree) loadSSTable(key string) (string, error) {
+	files, err := os.ReadDir(l.dataDir)
+	if err != nil {
+		return "", err
+	}
+
+	// Search SSTable files.
+	for i := len(files) - 1; i >= 0; i-- {
+		file := files[i]
+
+		if !strings.HasPrefix(file.Name(), "sstable-") {
+			continue
+		}
+
+		filename := filepath.Join(l.dataDir, file.Name())
+
+		value, found, err := ReadSSTable(filename, key)
+		if err != nil {
+			return "", err
+		}
+
+		if found {
+			return value, nil
+		}
+	}
+
+	return "", ErrKeyNotFound
+}
+
+func (l *LSMTree) Delete(key string) error {
+	l.mu.Lock()
+	defer l.mu.Unlock()
+
+	operation := fmt.Sprintf("DELETE|%s", key)
+
+	err := l.wal.Write(operation)
+	if err != nil {
+		return err
+	}
+
+	l.memTable.Delete(key)
+
+	return nil
+}
+
+func (l *LSMTree) memTableSize() int {
+	return len(l.memTable.Keys())
+}
+
+func (l *LSMTree) flush() error {
+	if l.memTableSize() == 0 {
+		return nil
+	}
+
+	l.sstableID++
+
+	filename := filepath.Join(
+		l.dataDir,
+		"sstable-"+strconv.Itoa(l.sstableID)+".db",
+	)
+
+	err := WriteSSTable(filename, l.memTable)
+	if err != nil {
+		return err
+	}
+
+	l.memTable = NewMemTable()
+
+	return nil
+}
+
+func (l *LSMTree) Flush() error {
+	l.mu.Lock()
+	defer l.mu.Unlock()
+
+	return l.flush()
+}
+
+func (l *LSMTree) Close() error {
+	l.mu.Lock()
+	defer l.mu.Unlock()
+
+	if l.memTableSize() > 0 {
+		err := l.flush()
+		if err != nil {
+			return err
+		}
+	}
+
+	return l.wal.Close()
+}

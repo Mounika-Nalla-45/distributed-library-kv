@@ -1,0 +1,17 @@
+PUT|B101|Computer Networks
+DELETE|B101
+PUT|B101|Computer Networks
+DELETE|B101
+PUT|B103|Data Structures
+DELETE|B103
+PUT|B101|Computer Networks
+PUT|B500|Distributed Systems
+PUT|B500|Distributed Systems
+PUT|REPLICA1|Replication Test
+PUT|REPLICA2|Replication Test 2
+PUT|REPLICA3|Replication Test 3
+PUT|REPLICA4|Replication Test 4
+PUT|DELETE_TEST|Delete Replication Test
+PUT|DELETE_TEST|Computer Networks
+PUT|DELETE_TEST|Delete Replication Test
+DELETE|DELETE_TEST

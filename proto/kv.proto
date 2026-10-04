@@ -8,6 +8,13 @@ service KVService {
     rpc Put(PutRequest) returns (PutResponse);
     rpc Get(GetRequest) returns (GetResponse);
     rpc Delete(DeleteRequest) returns (DeleteResponse);
+
+    // Internal replication operations.
+    rpc ReplicatePut(PutRequest) returns (PutResponse);
+    rpc ReplicateDelete(DeleteRequest) returns (DeleteResponse);
+    
+    rpc RequestVote(VoteRequest) returns (VoteResponse);
+    rpc Heartbeat(HeartbeatRequest) returns (HeartbeatResponse);
 }
 
 message PutRequest {
@@ -34,4 +41,23 @@ message DeleteRequest {
 
 message DeleteResponse {
     bool success = 1;
+}
+message VoteRequest {
+    int32 term = 1;
+    string candidate_id = 2;
+}
+
+message VoteResponse {
+    int32 term = 1;
+    bool vote_granted = 2;
+}
+
+message HeartbeatRequest {
+    int32 term = 1;
+    string leader_id = 2;
+}
+
+message HeartbeatResponse {
+    int32 term = 1;
+    bool success = 2;
 }

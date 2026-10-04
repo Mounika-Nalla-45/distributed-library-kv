@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"flag"
 	"fmt"
 	"log"
 	"time"
@@ -13,8 +14,15 @@ import (
 )
 
 func main() {
+	address := flag.String("address", "localhost:50051", "server address")
+	operation := flag.String("operation", "put", "put, get or delete")
+	key := flag.String("key", "B101", "key")
+	value := flag.String("value", "Computer Networks", "value")
+
+	flag.Parse()
+
 	conn, err := grpc.NewClient(
-		"localhost:50051",
+		*address,
 		grpc.WithTransportCredentials(insecure.NewCredentials()),
 	)
 	if err != nil {
@@ -27,45 +35,43 @@ func main() {
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 
-	// PUT
-	putResponse, err := client.Put(ctx, &pb.PutRequest{
-		Key:   "B101",
-		Value: "Computer Networks",
-	})
-	if err != nil {
-		log.Fatal(err)
+	fmt.Println("Connected to:", *address)
+
+	switch *operation {
+
+	case "put":
+		response, err := client.Put(ctx, &pb.PutRequest{
+			Key:   *key,
+			Value: *value,
+		})
+		if err != nil {
+			log.Fatal(err)
+		}
+
+		fmt.Println("PUT success:", response.GetSuccess())
+
+	case "get":
+		response, err := client.Get(ctx, &pb.GetRequest{
+			Key: *key,
+		})
+		if err != nil {
+			log.Fatal(err)
+		}
+
+		fmt.Println("GET found:", response.GetFound())
+		fmt.Println("GET value:", response.GetValue())
+
+	case "delete":
+		response, err := client.Delete(ctx, &pb.DeleteRequest{
+			Key: *key,
+		})
+		if err != nil {
+			log.Fatal(err)
+		}
+
+		fmt.Println("DELETE success:", response.GetSuccess())
+
+	default:
+		log.Fatalf("unknown operation: %s", *operation)
 	}
-
-	fmt.Println("PUT success:", putResponse.GetSuccess())
-
-	// GET
-	getResponse, err := client.Get(ctx, &pb.GetRequest{
-		Key: "B101",
-	})
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	fmt.Println("GET found:", getResponse.GetFound())
-	fmt.Println("GET value:", getResponse.GetValue())
-
-	// DELETE
-	deleteResponse, err := client.Delete(ctx, &pb.DeleteRequest{
-		Key: "B101",
-	})
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	fmt.Println("DELETE success:", deleteResponse.GetSuccess())
-
-	// GET after DELETE
-	getResponse, err = client.Get(ctx, &pb.GetRequest{
-		Key: "B101",
-	})
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	fmt.Println("GET after DELETE found:", getResponse.GetFound())
 }
