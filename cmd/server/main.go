@@ -11,8 +11,18 @@ import (
 	"google.golang.org/grpc"
 	"log"
 	"net"
+	"os"
 	"time"
 )
+
+func getEnv(key, fallback string) string {
+	value := os.Getenv(key)
+	if value != "" {
+		return value
+	}
+
+	return fallback
+}
 
 func main() {
 	nodeID := flag.String("id", "node1", "node ID")
@@ -30,15 +40,15 @@ func main() {
 	nodes := []cluster.Node{
 		{
 			ID:      "node1",
-			Address: "localhost:50051",
+			Address: "node1:50051",
 		},
 		{
 			ID:      "node2",
-			Address: "localhost:50052",
+			Address: "node2:50052",
 		},
 		{
 			ID:      "node3",
-			Address: "localhost:50053",
+			Address: "node3:50053",
 		},
 	}
 
@@ -71,16 +81,48 @@ func main() {
 		time.Sleep(2 * time.Second)
 
 		if *nodeID == "node1" {
+			// Initial leader for the 3-node cluster.
 			raftNode.BecomeLeader()
 
 			fmt.Printf("Node %s became LEADER\n", *nodeID)
 
+			// Leader sends heartbeats to node2 and node3.
 			raftNode.StartHeartbeat(otherNodes)
-		} else {
-			fmt.Printf("Node %s is FOLLOWER\n", *nodeID)
-		}
-	}()
 
+			return
+		}
+
+		// node2 and node3 start as followers.
+		fmt.Printf("Node %s is FOLLOWER\n", *nodeID)
+
+		// Followers monitor the leader.
+		go func() {
+			for {
+				time.Sleep(2 * time.Second)
+
+				if raftNode.IsLeader() {
+					continue
+				}
+
+				// Only start an election when heartbeat has timed out.
+				if raftNode.ShouldStartElection() {
+					fmt.Printf("Node %s starting election...\n", *nodeID)
+
+					if raftNode.StartElection(otherNodes) {
+						fmt.Printf("Node %s became LEADER\n", *nodeID)
+
+						raftNode.StartHeartbeat(otherNodes)
+						return
+					}
+
+					fmt.Printf(
+						"Node %s election failed, retrying...\n",
+						*nodeID,
+					)
+				}
+			}
+		}()
+	}()
 	if err := grpcServer.Serve(listener); err != nil {
 		log.Fatal(err)
 	}

@@ -14,15 +14,15 @@ func DefaultNodes() []Node {
 	return []Node{
 		{
 			ID:      "node1",
-			Address: "localhost:50051",
+			Address: "node1:50051",
 		},
 		{
 			ID:      "node2",
-			Address: "localhost:50052",
+			Address: "node2:50052",
 		},
 		{
 			ID:      "node3",
-			Address: "localhost:50053",
+			Address: "node3:50053",
 		},
 	}
 }

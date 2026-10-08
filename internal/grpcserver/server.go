@@ -44,8 +44,8 @@ func (s *Server) Put(
 
 		committed := s.raftNode.ReplicateEntry(
 			[]string{
-				"localhost:50052",
-				"localhost:50053",
+				"node2:50052",
+				"node3:50053",
 			},
 			"PUT",
 			req.GetKey(),

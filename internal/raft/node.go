@@ -2,6 +2,7 @@ package raft
 
 import (
 	"context"
+	"fmt"
 	"sync"
 	"time"
 
@@ -56,12 +57,13 @@ func (n *Node) BecomeCandidate() {
 	n.VotedFor = n.ID
 	n.LastHeartbeat = time.Now()
 }
-
 func (n *Node) BecomeLeader() {
 	n.mu.Lock()
 	defer n.mu.Unlock()
 
 	n.State = Leader
+	n.VotedFor = n.ID
+	n.LastHeartbeat = time.Now()
 }
 
 func (n *Node) BecomeFollower(term int) {
@@ -111,11 +113,22 @@ func (n *Node) StartElection(nodes []string) bool {
 
 	votes := 1
 
+	selfAddress := ""
+
+	switch n.ID {
+	case "node1":
+		selfAddress = "node1:50051"
+	case "node2":
+		selfAddress = "node2:50052"
+	case "node3":
+		selfAddress = "node3:50053"
+	}
+
 	for _, address := range nodes {
-		if address == "" {
+
+		if address == "" || address == selfAddress {
 			continue
 		}
-
 		ctx, cancel := context.WithTimeout(
 			context.Background(),
 			2*time.Second,
@@ -359,9 +372,17 @@ func (n *Node) ReplicateEntry(
 			)
 
 			if err != nil {
+				fmt.Printf("AppendEntries to %s failed: %v\n", address, err)
 				resultCh <- false
 				return
 			}
+
+			fmt.Printf(
+				"AppendEntries to %s: success=%v term=%d\n",
+				address,
+				response.GetSuccess(),
+				response.GetTerm(),
+			)
 
 			resultCh <- response.GetSuccess()
 
@@ -393,4 +414,23 @@ func (n *Node) ReplicateEntry(
 	}
 
 	return false
+}
+func (n *Node) ElectionTimeoutExpired(timeout time.Duration) bool {
+	n.mu.Lock()
+	defer n.mu.Unlock()
+
+	return time.Since(n.LastHeartbeat) > timeout
+}
+func (n *Node) ShouldStartElection() bool {
+	n.mu.Lock()
+	defer n.mu.Unlock()
+
+	// Never start an election if already leader.
+	if n.State == Leader {
+		return false
+	}
+
+	// Start election if we have not heard from a leader
+	// for more than 5 seconds.
+	return time.Since(n.LastHeartbeat) > 5*time.Second
 }
